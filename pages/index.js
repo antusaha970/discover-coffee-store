@@ -4,17 +4,48 @@ import Banner from "../components/Banner/Banner";
 import Image from "next/image";
 import Card from "../components/Card/Card";
 import coffeeStoresData from "../data/coffee-stores.json";
+import { fetchCoffeeStores } from "../lib/coffee-store";
+import userLocation from "../hooks/user-track";
+import { useContext, useEffect, useState } from "react";
+import { ACTION_TYPE, StoreContext } from "./_app";
 
 export const getStaticProps = async () => {
-  console.log("this is from getStaticProps");
-  return { props: { coffeeStores: coffeeStoresData } };
+  const coffeeStores = await fetchCoffeeStores();
+  return { props: { coffeeStores } };
 };
 
 export default function Home(props) {
-  console.log("This is from Home");
+  const { handleTrackLocation, locationError, isLocating } = userLocation();
+  const { state, dispatch } = useContext(StoreContext);
+  const { latLong, coffeeStores } = state;
+  const [coffeeStoreError, setCoffeeStoreError] = useState(null);
   const handleBannerButtonClick = () => {
-    console.log("Banner button clicked");
+    handleTrackLocation();
   };
+  console.log({ latLong, locationError });
+
+  useEffect(() => {
+    async function fetchData() {
+      if (latLong) {
+        try {
+          const stores = await fetchCoffeeStores(latLong, 20);
+          dispatch({
+            type: ACTION_TYPE.SET_COFFEE_STORES,
+            payload: {
+              coffeeStores: stores,
+            },
+          });
+        } catch (error) {
+          console.log({ error });
+          setCoffeeStoreError(error.message);
+        }
+      }
+    }
+    fetchData();
+  }, [latLong]);
+
+  const imgUrl =
+    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80";
   return (
     <div className={styles.container}>
       <Head>
@@ -25,9 +56,11 @@ export default function Home(props) {
 
       <main className={styles.main}>
         <Banner
-          buttonText="view nearby coffee shops"
+          buttonText={isLocating ? "loading" : "view nearby coffee shops"}
           handleClick={handleBannerButtonClick}
         />
+        {locationError && <p>Unable to locate your location</p>}
+        {coffeeStoreError && <p>Unable to load coffee stores</p>}
         <div className={styles.heroImage}>
           <Image
             src="/static/hero-image.png"
@@ -36,21 +69,38 @@ export default function Home(props) {
             alt="hero image"
           />
         </div>
+        {coffeeStores.length > 0 && (
+          <div className={styles.sectionWrapper}>
+            <h2 className={styles.heading2}>Coffee Store near me</h2>
+            <div className={styles.cardLayout}>
+              {coffeeStores.map((coffeeStore) => (
+                <Card
+                  key={coffeeStore.id}
+                  href={`/coffee-store/${coffeeStore.id}`}
+                  imgUrl={coffeeStore.imgUrl || imgUrl}
+                  name={coffeeStore.name}
+                  className={styles.card}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {props.coffeeStores.length > 0 && (
-          <>
+          <div className={styles.sectionWrapper}>
             <h2 className={styles.heading2}>Feni Stores</h2>
             <div className={styles.cardLayout}>
               {props.coffeeStores.map((coffeeStore) => (
                 <Card
                   key={coffeeStore.id}
                   href={`/coffee-store/${coffeeStore.id}`}
-                  imgUrl={coffeeStore.imgUrl}
+                  imgUrl={coffeeStore.imgUrl || imgUrl}
                   name={coffeeStore.name}
                   className={styles.card}
                 />
               ))}
             </div>
-          </>
+          </div>
         )}
       </main>
     </div>
