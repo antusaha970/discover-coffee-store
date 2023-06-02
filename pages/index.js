@@ -3,7 +3,6 @@ import styles from "../styles/Home.module.css";
 import Banner from "../components/Banner/Banner";
 import Image from "next/image";
 import Card from "../components/Card/Card";
-import coffeeStoresData from "../data/coffee-stores.json";
 import { fetchCoffeeStores } from "../lib/coffee-store";
 import userLocation from "../hooks/user-track";
 import { useContext, useEffect, useState } from "react";
