@@ -7,7 +7,8 @@ import Image from "next/image";
 import styles from "../../styles/coffee-store.module.css";
 import { fetchCoffeeStores } from "../../lib/coffee-store";
 import { StoreContext } from "../_app";
-import { isEmpty } from "../../utils";
+import { fetcher, isEmpty } from "../../utils";
+import useSWR from "swr";
 
 export async function getStaticProps(staticProps) {
   const coffeeStores = await fetchCoffeeStores();
@@ -44,22 +45,64 @@ const CoffeeStore = (initialProps) => {
     return <div>Loading...</div>;
   }
   const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
+  const [votingCount, setVotingCount] = useState(1);
   const {
     state: { coffeeStores },
   } = useContext(StoreContext);
 
+  const handleCreateCoffeeStore = async (coffeeStore) => {
+    try {
+      const { id, name, address, neighbourhood, imgUrl, voting } = coffeeStore;
+      const response = await fetch("/api/createCoffeeStore", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          name,
+          address: address || "",
+          neighbourhood: neighbourhood || "",
+          imgUrl,
+          voting: 0,
+        }),
+      });
+      const dbCoffeeStore = await response.json();
+      console.log({ dbCoffeeStore });
+    } catch (error) {
+      console.error({ error });
+    }
+  };
   useEffect(() => {
     if (isEmpty(initialProps.coffeeStore)) {
       if (coffeeStores.length > 0) {
-        const findCoffeeStoreById = coffeeStores.find(
+        const coffeeStoreFromContext = coffeeStores.find(
           (coffeeStore) => coffeeStore.id.toString() == id
         );
-        setCoffeeStore(findCoffeeStoreById);
+        if (coffeeStoreFromContext) {
+          setCoffeeStore(coffeeStoreFromContext);
+          handleCreateCoffeeStore(coffeeStoreFromContext);
+        }
       }
+    } else {
+      //SSG
+      handleCreateCoffeeStore(initialProps.coffeeStore);
     }
-  }, [id]);
+  }, [id, initialProps, initialProps.CoffeeStore]);
 
   const { name, address, neighbourhood, imgUrl } = coffeeStore;
+
+  const { data, error } = useSWR(`/api/getCoffeeStoreById?id=${id}`, fetcher);
+  useEffect(() => {
+    if (data) {
+      setCoffeeStore(data[0]);
+      setVotingCount(data[0].voting);
+    }
+  }, [data]);
+
+  if (error) {
+    console.error({ error });
+  }
   return (
     <div className={styles.layout}>
       <Head>
@@ -116,7 +159,7 @@ const CoffeeStore = (initialProps) => {
               height="24"
               alt="star icon"
             />
-            {/* <p className={styles.text}>{votingCount}</p> */}
+            <p className={styles.text}>{votingCount}</p>
           </div>
 
           <button className={styles.upvoteButton}>Up vote!</button>
