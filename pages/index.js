@@ -21,7 +21,6 @@ export default function Home(props) {
   const handleBannerButtonClick = () => {
     handleTrackLocation();
   };
-  console.log({ latLong, locationError });
 
   useEffect(() => {
     async function fetchData() {
@@ -39,7 +38,7 @@ export default function Home(props) {
             },
           });
         } catch (error) {
-          console.log({ error });
+          console.error({ error });
           setCoffeeStoreError(error.message);
         }
       }
