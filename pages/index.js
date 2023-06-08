@@ -30,8 +30,6 @@ export default function Home(props) {
             `/api/getCoffeeStore?latLong=${latLong}&limit=20`
           );
           const coffeeStores = await response.json();
-          console.log(coffeeStores);
-          console.log(coffeeStores);
           dispatch({
             type: ACTION_TYPE.SET_COFFEE_STORES,
             payload: {
@@ -74,7 +72,7 @@ export default function Home(props) {
         </div>
         {coffeeStores.length > 0 && (
           <div className={styles.sectionWrapper}>
-            <h2 className={styles.heading2}>Coffee Store near me</h2>
+            <h2 className={styles.heading2}>Restaurant near me</h2>
             <div className={styles.gridContainer}>
               <div className={styles.cardLayout}>
                 {coffeeStores.map((coffeeStore) => (
