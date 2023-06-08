@@ -15,7 +15,7 @@ const userLocation = () => {
     dispatch({
       type: ACTION_TYPE.SET_LAT_LONG,
       payload: {
-        latLong: `${fakeLati},${fakeLongi}`,
+        latLong: `${latitude},${longitude}`,
       },
     });
     setLocationError("");
